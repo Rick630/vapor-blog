@@ -1,4 +1,4 @@
-name: Swift Vapor Multi-Arch CI/CD
+name: Swift Vapor Cross-Compile CI/CD
 
 on:
   push:
@@ -10,74 +10,49 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        arch: [x86_64, arm64]  # 并行构建两种架构
+        target_arch: ["x86_64", "arm64"]  # 同时编译 x86_64 和 arm64
     steps:
-      - name: 检出代码
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-      - name: 设置 Docker 构建环境
+      - name: 安装交叉编译依赖 (仅 arm64)
+        if: matrix.target_arch == 'arm64'
         run: |
-          docker run --rm --platform linux/${{ matrix.arch }} \
-            -v "$PWD:/app" -w /app \
-            swift:5.9-jammy \
+          sudo apt-get update
+          sudo apt-get install -y \
+            clang \
+            gcc-aarch64-linux-gnu \
+            libc6-dev-arm64-cross
+
+      - name: 编译指定架构
+        run: |
+          if [ "${{ matrix.target_arch }}" == "arm64" ]; then
+            # 交叉编译 arm64
+            swift build \
+              -c release \
+              --static-swift-stdlib \
+              --triple arm64-unknown-linux-gnu \
+              -Xlinker -fuse-ld=lld \
+              -Xlinker --target=aarch64-linux-gnu
+          else
+            # 正常编译 x86_64
             swift build -c release --static-swift-stdlib
-          
-          # 重命名二进制文件以区分架构
-          mv .build/release/App ./App-${{ matrix.arch }}
+          fi
 
-      - name: 收集产物
+          # 重命名二进制以区分架构
+          mv .build/release/App ./App-${{ matrix.target_arch }}
+
+      - name: 验证二进制架构
         run: |
-          mkdir -p release
-          mv App-${{ matrix.arch }} release/
-          cp -r Public Resources release/
-          cd release && zip -r ../vapor-app-${{ matrix.arch }}.zip .
+          file ./App-${{ matrix.target_arch }}
 
-      - name: 上传产物
-        uses: actions/upload-artifact@v4
+      - name: 打包产物
+        run: |
+          mkdir -p release-${{ matrix.target_arch }}
+          mv App-${{ matrix.target_arch }} release-${{ matrix.target_arch }}/
+          cp -r Public Resources release-${{ matrix.target_arch }}/
+          cd release-${{ matrix.target_arch }} && zip -r ../vapor-app-${{ matrix.target_arch }}.zip .
+
+      - uses: actions/upload-artifact@v4
         with:
-          name: vapor-app-${{ matrix.arch }}
-          path: vapor-app-${{ matrix.arch }}.zip
-
-  # 可选：合并两个架构的产物（需添加后续步骤）
-  # package:
-  #   needs: build
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/download-artifact@v4
-  #       with:
-  #         pattern: vapor-app-*
-  #     - run: mkdir universal-release && unzip vapor-app-*.zip -d universal-release
-  #     - uses: actions/upload-artifact@v4
-  #       with:
-  #         name: vapor-app-universal
-  #         path: universal-release
-
-
-    # - name: 上传产物
-    #   uses: appleboy/scp-action@v0.1.4
-    #   with:
-    #     host: ${{ secrets.HOST }}
-    #     username: ${{ secrets.USERNAME }}
-    #     password: ${{ secrets.PASSWORD }}
-    #     port: ${{ secrets.PORT }}
-    #     source: output_filename.zip
-    #     target: ${{secrets.TARGET_FOLD}}
-
-    # - name: 部署服务
-    #   uses: appleboy/ssh-action@v1.0.0
-    #   with:
-    #     host: ${{ secrets.HOST }}
-    #     username: ${{ secrets.USERNAME }}
-    #     password: ${{ secrets.PASSWORD }}
-    #     port: ${{ secrets.PORT }}
-    #     script: |
-    #       cd ${{secrets.TARGET_FOLD}}
-    #       ls -all
-    #       unzip -o output_filename.zip
-    #       chmod +x App
-    #       supervisorctl stop iblog-oldbird-run
-    #       supervisorctl start iblog-oldbird-run
-         
-
-
-
+          name: vapor-app-${{ matrix.target_arch }}
+          path: vapor-app-${{ matrix.target_arch }}.zip
