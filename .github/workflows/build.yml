@@ -43,7 +43,7 @@ jobs:
         zip -r output_filename.zip App Public Resources
 
     - name: 保存产物
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: vapor-app-artifact
         path: output_filename.zip
