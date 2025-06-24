@@ -29,8 +29,8 @@ jobs:
 
     - name: 安装Swift
       run: |
-        swiftenv install 5.8.1 --skip-existing
-        swiftenv global 5.8.1
+        swiftenv install 5.9 --skip-existing
+        swiftenv global 5.9
 
     - name: 编译项目
       run: |
