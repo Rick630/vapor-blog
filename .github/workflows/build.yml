@@ -10,6 +10,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    container: swift:5.9-jammy
 
     steps:
     - name: 拉取代码
