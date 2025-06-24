@@ -47,30 +47,30 @@ jobs:
         name: vapor-app-artifact
         path: output_filename.zip
 
-    - name: 上传产物
-      uses: appleboy/scp-action@v0.1.4
-      with:
-        host: ${{ secrets.HOST }}
-        username: ${{ secrets.USERNAME }}
-        password: ${{ secrets.PASSWORD }}
-        port: ${{ secrets.PORT }}
-        source: output_filename.zip
-        target: ${{secrets.TARGET_FOLD}}
+    # - name: 上传产物
+    #   uses: appleboy/scp-action@v0.1.4
+    #   with:
+    #     host: ${{ secrets.HOST }}
+    #     username: ${{ secrets.USERNAME }}
+    #     password: ${{ secrets.PASSWORD }}
+    #     port: ${{ secrets.PORT }}
+    #     source: output_filename.zip
+    #     target: ${{secrets.TARGET_FOLD}}
 
-    - name: 部署服务
-      uses: appleboy/ssh-action@v1.0.0
-      with:
-        host: ${{ secrets.HOST }}
-        username: ${{ secrets.USERNAME }}
-        password: ${{ secrets.PASSWORD }}
-        port: ${{ secrets.PORT }}
-        script: |
-          cd ${{secrets.TARGET_FOLD}}
-          ls -all
-          unzip -o output_filename.zip
-          chmod +x App
-          supervisorctl stop iblog-oldbird-run
-          supervisorctl start iblog-oldbird-run
+    # - name: 部署服务
+    #   uses: appleboy/ssh-action@v1.0.0
+    #   with:
+    #     host: ${{ secrets.HOST }}
+    #     username: ${{ secrets.USERNAME }}
+    #     password: ${{ secrets.PASSWORD }}
+    #     port: ${{ secrets.PORT }}
+    #     script: |
+    #       cd ${{secrets.TARGET_FOLD}}
+    #       ls -all
+    #       unzip -o output_filename.zip
+    #       chmod +x App
+    #       supervisorctl stop iblog-oldbird-run
+    #       supervisorctl start iblog-oldbird-run
          
 
 
