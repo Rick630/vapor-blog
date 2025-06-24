@@ -8,17 +8,21 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    container: swift:5.8-jammy  # 关键修改：使用 Swift 5.8 官方镜像
+    container: swift:5.8-jammy
     strategy:
       matrix:
         target_arch: ["x86_64", "arm64"]
     steps:
       - uses: actions/checkout@v3
 
+      - name: 安装基础工具（包含 file 命令）
+        run: |
+          apt-get update
+          apt-get install -y file  
+
       - name: 安装交叉编译依赖 (仅 arm64)
         if: matrix.target_arch == 'arm64'
         run: |
-          apt-get update
           apt-get install -y \
             clang \
             gcc-aarch64-linux-gnu \
@@ -27,7 +31,6 @@ jobs:
       - name: 编译指定架构
         run: |
           if [ "${{ matrix.target_arch }}" == "arm64" ]; then
-            # 交叉编译 arm64
             swift build \
               -c release \
               --static-swift-stdlib \
@@ -35,15 +38,13 @@ jobs:
               -Xlinker -fuse-ld=lld \
               -Xlinker --target=aarch64-linux-gnu
           else
-            # 正常编译 x86_64
             swift build -c release --static-swift-stdlib
           fi
-
           mv .build/release/App ./App-${{ matrix.target_arch }}
 
       - name: 验证二进制架构
         run: |
-          file ./App-${{ matrix.target_arch }}
+          file ./App-${{ matrix.target_arch }}  # 现在可以正常执行
 
       - name: 打包产物
         run: |
