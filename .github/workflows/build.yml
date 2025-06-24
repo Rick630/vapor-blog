@@ -1,53 +1,57 @@
-name: Swift Vapor CI/CD
+name: Swift Vapor Multi-Arch CI/CD
 
 on:
   push:
-    branches:
-      - dev  # 更改为你的默认分支，例如master或main
-      - main 
-  workflow_dispatch:  # 允许手动触发
+    branches: [dev, main]
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    container: swift:5.9-jammy
-
+    strategy:
+      matrix:
+        arch: [x86_64, arm64]  # 并行构建两种架构
     steps:
-    - name: 拉取代码
-      uses: actions/checkout@v3
-    
-    # - name: 安装 SwiftEnv
-    #   run: git clone https://github.com/kylef/swiftenv.git ~/.swiftenv
+      - name: 检出代码
+        uses: actions/checkout@v3
 
-    # - name: Setup environment
-    #   run: |
-    #     export SWIFTENV_ROOT="$HOME/.swiftenv"
-    #     export PATH="$SWIFTENV_ROOT/bin:$PATH"
-    #     eval "$(swiftenv init -)"
-    #     echo "$PATH" >> $GITHUB_PATH
-    #     echo $SWIFTENV_ROOT
-        
+      - name: 设置 Docker 构建环境
+        run: |
+          docker run --rm --platform linux/${{ matrix.arch }} \
+            -v "$PWD:/app" -w /app \
+            swift:5.9-jammy \
+            swift build -c release --static-swift-stdlib
+          
+          # 重命名二进制文件以区分架构
+          mv .build/release/App ./App-${{ matrix.arch }}
 
-    # - name: 安装Swift
-    #   run: |
-    #     swiftenv install 5.9 --skip-existing
-    #     swiftenv global 5.9
+      - name: 收集产物
+        run: |
+          mkdir -p release
+          mv App-${{ matrix.arch }} release/
+          cp -r Public Resources release/
+          cd release && zip -r ../vapor-app-${{ matrix.arch }}.zip .
 
-    - name: 编译项目
-      run: |
-        swift build -c release --static-swift-stdlib
-        mv .build/x86_64-unknown-linux-gnu/release/App ./
-        chmod +x ./App
+      - name: 上传产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: vapor-app-${{ matrix.arch }}
+          path: vapor-app-${{ matrix.arch }}.zip
 
-    - name: 收集产物
-      run: |
-        zip -r output_filename.zip App Public Resources
+  # 可选：合并两个架构的产物（需添加后续步骤）
+  # package:
+  #   needs: build
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/download-artifact@v4
+  #       with:
+  #         pattern: vapor-app-*
+  #     - run: mkdir universal-release && unzip vapor-app-*.zip -d universal-release
+  #     - uses: actions/upload-artifact@v4
+  #       with:
+  #         name: vapor-app-universal
+  #         path: universal-release
 
-    - name: 保存产物
-      uses: actions/upload-artifact@v4
-      with:
-        name: vapor-app-artifact
-        path: output_filename.zip
 
     # - name: 上传产物
     #   uses: appleboy/scp-action@v0.1.4
