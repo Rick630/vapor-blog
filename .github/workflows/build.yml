@@ -15,10 +15,10 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: 安装基础工具（包含 file 命令）
+      - name: 安装必要工具
         run: |
           apt-get update
-          apt-get install -y file  
+          apt-get install -y file zip  # 添加 zip 工具
 
       - name: 安装交叉编译依赖 (仅 arm64)
         if: matrix.target_arch == 'arm64'
@@ -44,7 +44,7 @@ jobs:
 
       - name: 验证二进制架构
         run: |
-          file ./App-${{ matrix.target_arch }}  # 现在可以正常执行
+          file ./App-${{ matrix.target_arch }}
 
       - name: 打包产物
         run: |
