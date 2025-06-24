@@ -16,22 +16,22 @@ jobs:
     - name: 拉取代码
       uses: actions/checkout@v3
     
-    - name: 安装 SwiftEnv
-      run: git clone https://github.com/kylef/swiftenv.git ~/.swiftenv
+    # - name: 安装 SwiftEnv
+    #   run: git clone https://github.com/kylef/swiftenv.git ~/.swiftenv
 
-    - name: Setup environment
-      run: |
-        export SWIFTENV_ROOT="$HOME/.swiftenv"
-        export PATH="$SWIFTENV_ROOT/bin:$PATH"
-        eval "$(swiftenv init -)"
-        echo "$PATH" >> $GITHUB_PATH
-        echo $SWIFTENV_ROOT
+    # - name: Setup environment
+    #   run: |
+    #     export SWIFTENV_ROOT="$HOME/.swiftenv"
+    #     export PATH="$SWIFTENV_ROOT/bin:$PATH"
+    #     eval "$(swiftenv init -)"
+    #     echo "$PATH" >> $GITHUB_PATH
+    #     echo $SWIFTENV_ROOT
         
 
-    - name: 安装Swift
-      run: |
-        swiftenv install 5.9 --skip-existing
-        swiftenv global 5.9
+    # - name: 安装Swift
+    #   run: |
+    #     swiftenv install 5.9 --skip-existing
+    #     swiftenv global 5.9
 
     - name: 编译项目
       run: |
